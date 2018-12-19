@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var bookType = $('#bookType');
     var bookISBN = $('#bookISBN');
 
+    // Dodawanie nowego booka z forma
+
     bookAddSubmit.on('click', function (e) {
         e.preventDefault();
 
@@ -36,11 +38,13 @@ document.addEventListener('DOMContentLoaded', function () {
             console.log(result);
 
         });
-
+        // TODO działa dopiero po f5, za drugim razem wszystko jest OK. DLACZEGO?
         window.location.reload(true);
     });
 
     var mainContainer = $('.main-container');
+
+    // POBRANIE KSIĄŻEK
 
     $.ajax({
         url: "http://localhost:8080/books/",
@@ -50,41 +54,45 @@ document.addEventListener('DOMContentLoaded', function () {
         for (var i = 0; i < response.length; i++) {
             var newDiv = $('<div>');
             var newDiv2 = $('<div>');
+            newDiv2.attr('data-id', response[i].id)
             var deleteLink = $('<a href="#"> USUŃ KSIĄŻKĘ</a>');
             var editLink = $('<a href="#"> Edytuj Książkę</a>');
-            var bookId = response[i].id;
             newDiv.text(response[i].title);
             newDiv.attr('class', 'form-control');
-            newDiv2.text('Autor: ' + response[i].author + ' Wydawca: ' + response[i].publisher);
+            newDiv2.text('Autor:' + response[i].author + ' Wydawca: ' + response[i].publisher+ ' ISBN: ' + response[i].isbn);
             newDiv2.append(deleteLink);
             newDiv2.append(editLink);
 
-            var titleToEdit = response[i].title;
-            var authorToEdit = response[i].author;
-            var isbnToEdit = response[i].isbn;
-            var typeToEdit = response[i].type;
-            var publisherToEdit = response[i].publisher;
+            var idToEdit = 0;
 
+        // przesłąnie książki o danym ID do formularza w celu edycji
 
-            editLink.on('click', function () {
-                //przekazac do forma
-                bookTitle.val(titleToEdit);
-                bookAuthor.val(authorToEdit);
-                bookISBN.val(isbnToEdit);
-                bookType.val(typeToEdit);
-                bookPublisher.val(publisherToEdit);
+            editLink.on('click', function (e) {
+                e.preventDefault();
+                var id = $(this).parent().attr('data-id');
+                $.ajax({
+                    url: "http://localhost:8080/books/" + id,
+                    type: 'GET',
+                    dataType: 'json'
+                }).done(function (response) {
+                    bookTitle.val(response.title);
+                    bookAuthor.val(response.author);
+                    bookISBN.val(response.isbn);
+                    bookType.val(response.type);
+                    bookPublisher.val(response.publisher);
+                    idToEdit = response.id;
+                })
 
-
-                //zamienc guziki
+                //zzamiana widoczności guzików - EDYCJA / ZAPIS - TODO do naprawy bug po kliknięciu 2 x edycja :PPP  - narazie się tym nie zajmujemy
                 bookEdit.toggle();
                 bookAddSubmit.toggle();
 
+
             })
 
-            bookEdit.on('click', function(e, bookId){
-                e.preventDefault();
-                console.log('JS ty kurwiu');
-                console.log(bookId);
+            // ZAPIS DO BAZY DANYCH EDYTOWANYCH KSIAZEK
+
+            bookEdit.on('click', function (e) {
                 var editedBook = {
                     title: bookTitle.val(),
                     publisher: bookPublisher.val(),
@@ -94,9 +102,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 };
 
                 $.ajax({
-                    url: 'http://localhost:8080/books/' + bookId,
+                    url: 'http://localhost:8080/books/' + idToEdit,
                     type: 'PUT',
-                    dataType: 'jason',
+                    dataType: 'json',
                     data: JSON.stringify(editedBook),
                     headers: {
                         'Accept': 'application/json',
@@ -106,15 +114,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 bookEdit.toggle();
                 bookAddSubmit.toggle();
+                window.location.reload(true);
             })
 
-            // zapytać rafała DLACZEGO!!?!?!?!
 
-
-
+         // USUWANIE KSIĄZKI O DANYM ID
 
             deleteLink.on('click', function () {
-                delBook(bookId);
+                var id = $(this).parent().attr('data-id');
+                delBook(id);
                 window.location.reload()
             })
 
@@ -130,6 +138,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         }
     })
+
+    // FUNCCJA USUWAJĄCA KSIĄŻKE O DANYM ID
 
     var delBook = function (id) {
         $.ajax({

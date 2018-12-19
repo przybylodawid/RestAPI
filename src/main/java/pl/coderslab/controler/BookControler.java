@@ -44,13 +44,11 @@ public class BookControler {
 
 
     }
-    // dodaje
+
 
     @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
     public void update(@RequestBody Book editedBook, @PathVariable Long id){
-        System.out.println(editedBook);
-        System.out.println(id);
-            mbs.updateBook(id, editedBook);
+          mbs.updateBook(id, editedBook);
 
     }
 
